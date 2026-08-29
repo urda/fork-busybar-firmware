@@ -27,6 +27,8 @@ class BusyBarSettings(BaseModel):
     show_work_phase_only: bool
     trigger_smart_home: bool
     show_work_time: bool = True
+    work_time_shown_ms: int = 5000
+    work_time_hidden_ms: int = 15000
 
 
 class BusySnapshotData(BaseModel):

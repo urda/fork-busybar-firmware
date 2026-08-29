@@ -112,6 +112,8 @@ static bool
     if(json == NULL || cJSON_IsNull(json)) {
         memset(app_config, 0, sizeof(BusyAppConfig));
         app_config->is_show_work_time_enabled = BUSY_APP_IS_SHOW_WORK_TIME_ENABLED_DEFAULT;
+        app_config->work_time_shown_ms = BUSY_APP_WORK_TIME_SHOWN_MS_DEFAULT;
+        app_config->work_time_hidden_ms = BUSY_APP_WORK_TIME_HIDDEN_MS_DEFAULT;
         success = true;
     }
 

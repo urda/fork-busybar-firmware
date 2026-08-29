@@ -13,6 +13,8 @@ typedef enum {
     VarItemListIdAutostart,
     VarItemListIdShowWork,
     VarItemListIdShowWorkTime,
+    VarItemListIdTimeShown,
+    VarItemListIdTimeHidden,
     VarItemListIdDemoMode,
     VarItemListIdMax,
 } VarItemListId;
@@ -64,6 +66,8 @@ static void busy_scene_setup_timer_filter_items(BusySceneSetupTimer* data) {
                 [VarItemListIdTime] = true,
                 [VarItemListIdShowWork] = true,
                 [VarItemListIdShowWorkTime] = true,
+                [VarItemListIdTimeShown] = true,
+                [VarItemListIdTimeHidden] = true,
                 [VarItemListIdDemoMode] = true,
             },
         [BusyTimerModeInterval] =
@@ -75,6 +79,8 @@ static void busy_scene_setup_timer_filter_items(BusySceneSetupTimer* data) {
                 [VarItemListIdAutostart] = true,
                 [VarItemListIdShowWork] = true,
                 [VarItemListIdShowWorkTime] = true,
+                [VarItemListIdTimeShown] = true,
+                [VarItemListIdTimeHidden] = true,
                 [VarItemListIdDemoMode] = true,
             },
     };
@@ -169,6 +175,25 @@ static void
         var_item_list_add_switch(container->list, "Show work\nphase only", NULL, NULL);
 
     items[item_id++] = var_item_list_add_switch(container->list, "Show work\ntime", NULL, NULL);
+    items[item_id++] = var_item_list_add_spinbox(
+        container->list,
+        "Time shown",
+        "s",
+        MS_TO_S(BUSY_APP_WORK_TIME_MS_MIN),
+        MS_TO_S(BUSY_APP_WORK_TIME_MS_MAX),
+        1,
+        NULL,
+        NULL);
+
+    items[item_id++] = var_item_list_add_spinbox(
+        container->list,
+        "Time hidden",
+        "s",
+        MS_TO_S(BUSY_APP_WORK_TIME_MS_MIN),
+        MS_TO_S(BUSY_APP_WORK_TIME_MS_MAX),
+        1,
+        NULL,
+        NULL);
 
     items[item_id++] = var_item_list_add_switch(container->list, "Demo mode", NULL, NULL);
 }
@@ -199,6 +224,8 @@ static void busy_scene_setup_init_var_item_values(
 
     var_item_set_value(items[VarItemListIdShowWork], app_config->is_show_work_only_enabled);
     var_item_set_value(items[VarItemListIdShowWorkTime], app_config->is_show_work_time_enabled);
+    var_item_set_value(items[VarItemListIdTimeShown], MS_TO_S(app_config->work_time_shown_ms));
+    var_item_set_value(items[VarItemListIdTimeHidden], MS_TO_S(app_config->work_time_hidden_ms));
     var_item_set_value(items[VarItemListIdDemoMode], timer_preset->is_demo_mode_enabled);
 }
 
@@ -226,6 +253,8 @@ static void busy_scene_setup_get_var_item_values(
 
     app_config->is_show_work_only_enabled = var_item_get_value(items[VarItemListIdShowWork]);
     app_config->is_show_work_time_enabled = var_item_get_value(items[VarItemListIdShowWorkTime]);
+    app_config->work_time_shown_ms = S_TO_MS(var_item_get_value(items[VarItemListIdTimeShown]));
+    app_config->work_time_hidden_ms = S_TO_MS(var_item_get_value(items[VarItemListIdTimeHidden]));
     timer_preset->is_demo_mode_enabled = var_item_get_value(items[VarItemListIdDemoMode]);
 }
 

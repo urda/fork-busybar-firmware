@@ -33,6 +33,8 @@ DEFAULT_BUSY_SETTINGS = {
     "show_work_phase_only": False,
     "trigger_smart_home": False,
     "show_work_time": True,
+    "work_time_shown_ms": 5000,
+    "work_time_hidden_ms": 15000,
 }
 
 
@@ -374,6 +376,127 @@ class TestBusyProfileAPI:
         """Test GET /api/busy/profiles with invalid slot returns error"""
         response = busy_api.get_profile_raw("invalid_slot")
         assert response.status_code == 400
+
+    @allure.title("PUT /api/busy/profiles/custom (round trip work time)")
+    @pytest.mark.api
+    @pytest.mark.frontend
+    def test_api_busy_profile_put_work_time_round_trip(self, busy_api: BusyAPI):
+        """Test PUT /api/busy/profiles/custom with work time fields round-trips"""
+        original = busy_api.get_profile("custom")
+
+        test_profile = {
+            "sort_order": 0,
+            "title": "test_profile",
+            "id": original.id,
+            "timer_settings": {
+                "type": "SIMPLE",
+                "total_time_ms": 600000,
+            },
+            "busy_bar_settings": {
+                "theme": "busy",
+                "show_work_phase_only": False,
+                "trigger_smart_home": False,
+                "work_time_shown_ms": 6000,
+                "work_time_hidden_ms": 20000,
+            },
+            "profile_timestamp_ms": 0,
+        }
+
+        try:
+            with allure.step("Set test profile"):
+                response = busy_api.set_profile_raw("custom", test_profile)
+                assert response.status_code == 200
+
+            with allure.step("Verify profile work time fields after PUT"):
+                updated = busy_api.get_profile("custom")
+                assert updated.busy_bar_settings.work_time_shown_ms == 6000
+                assert updated.busy_bar_settings.work_time_hidden_ms == 20000
+        finally:
+            with allure.step("Restore original profile"):
+                restore_data = {
+                    "sort_order": original.sort_order,
+                    "title": original.title,
+                    "id": original.id,
+                    "timer_settings": original.timer_settings,
+                    "busy_bar_settings": original.busy_bar_settings.model_dump(),
+                    "profile_timestamp_ms": original.profile_timestamp_ms,
+                }
+                busy_api.set_profile_raw("custom", restore_data)
+
+    @allure.title("PUT /api/busy/profiles/custom (legacy default fallback)")
+    @pytest.mark.api
+    @pytest.mark.frontend
+    def test_api_busy_profile_put_legacy_fallback(self, busy_api: BusyAPI):
+        """Test PUT /api/busy/profiles/custom without work time fields falls back to defaults"""
+        original = busy_api.get_profile("custom")
+
+        test_profile = {
+            "sort_order": 0,
+            "title": "test_profile",
+            "id": original.id,
+            "timer_settings": {
+                "type": "SIMPLE",
+                "total_time_ms": 600000,
+            },
+            "busy_bar_settings": {
+                "theme": "busy",
+                "show_work_phase_only": False,
+                "trigger_smart_home": False,
+            },
+            "profile_timestamp_ms": 0,
+        }
+
+        try:
+            with allure.step("Set test profile"):
+                response = busy_api.set_profile_raw("custom", test_profile)
+                assert response.status_code == 200
+
+            with allure.step("Verify profile work time fields have defaults"):
+                response = busy_api.get_profile_raw("custom")
+                assert response.status_code == 200
+                data = response.json()
+                busy_settings = data.get("busy_bar_settings", {})
+                assert busy_settings.get("work_time_shown_ms") == 5000
+                assert busy_settings.get("work_time_hidden_ms") == 15000
+        finally:
+            with allure.step("Restore original profile"):
+                restore_data = {
+                    "sort_order": original.sort_order,
+                    "title": original.title,
+                    "id": original.id,
+                    "timer_settings": original.timer_settings,
+                    "busy_bar_settings": original.busy_bar_settings.model_dump(),
+                    "profile_timestamp_ms": original.profile_timestamp_ms,
+                }
+                busy_api.set_profile_raw("custom", restore_data)
+
+    @allure.title("PUT /api/busy/profiles/custom (reject invalid work time)")
+    @pytest.mark.api
+    @pytest.mark.frontend
+    def test_api_busy_profile_put_invalid_work_time(self, busy_api: BusyAPI):
+        """Test PUT /api/busy/profiles/custom rejects invalid work time values"""
+        original = busy_api.get_profile("custom")
+
+        test_profile = {
+            "sort_order": 0,
+            "title": "test_profile",
+            "id": original.id,
+            "timer_settings": {
+                "type": "SIMPLE",
+                "total_time_ms": 600000,
+            },
+            "busy_bar_settings": {
+                "theme": "busy",
+                "show_work_phase_only": False,
+                "trigger_smart_home": False,
+                "work_time_shown_ms": 60001,
+            },
+            "profile_timestamp_ms": 0,
+        }
+
+        with allure.step("Set test profile with invalid work time"):
+            response = busy_api.set_profile_raw("custom", test_profile)
+            assert response.status_code == 400
 
 
 @allure.feature("5. Web Frontend")

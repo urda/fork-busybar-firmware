@@ -27,6 +27,8 @@ typedef enum {
     BusyTimerSettingsV1AppConfigIdxSmartHome,
     BusyTimerSettingsV1AppConfigIdxWorkOnly,
     BusyTimerSettingsV1AppConfigIdxShowWorkTime,
+    BusyTimerSettingsV1AppConfigIdxWorkTimeShown,
+    BusyTimerSettingsV1AppConfigIdxWorkTimeHidden,
     BusyTimerSettingsV1AppConfigIdxMax,
 } BusyTimerSettingsV1AppConfigIdx;
 
@@ -49,6 +51,12 @@ typedef enum {
 } BusyTimerSettingsV1ProfileInfoIdx;
 
 // NOTE: Wastes ~264 bytes of flash space for convenience
+
+static bool
+    busy_timer_settings_v1_is_valid_work_time_ms(const SettingProviderSetting* setting, int value) {
+    UNUSED(setting);
+    return busy_timer_common_is_valid_work_time_ms(value);
+}
 static const BusyTimerSettingsV1 busy_timer_settings_v1_defaults[BusyTimerProfileIdMax] = {
     [BusyTimerProfileIdBusy] =
         {
@@ -60,6 +68,8 @@ static const BusyTimerSettingsV1 busy_timer_settings_v1_defaults[BusyTimerProfil
                             .is_show_work_only_enabled = false,
                             .is_smart_home_enabled = true,
                             .is_show_work_time_enabled = BUSY_APP_IS_SHOW_WORK_TIME_ENABLED_DEFAULT,
+                            .work_time_shown_ms = BUSY_APP_WORK_TIME_SHOWN_MS_DEFAULT,
+                            .work_time_hidden_ms = BUSY_APP_WORK_TIME_HIDDEN_MS_DEFAULT,
                         },
                     .timer_config =
                         {
@@ -92,6 +102,8 @@ static const BusyTimerSettingsV1 busy_timer_settings_v1_defaults[BusyTimerProfil
                             .is_show_work_only_enabled = true,
                             .is_smart_home_enabled = true,
                             .is_show_work_time_enabled = BUSY_APP_IS_SHOW_WORK_TIME_ENABLED_DEFAULT,
+                            .work_time_shown_ms = BUSY_APP_WORK_TIME_SHOWN_MS_DEFAULT,
+                            .work_time_hidden_ms = BUSY_APP_WORK_TIME_HIDDEN_MS_DEFAULT,
                         },
                     .timer_config =
                         {
@@ -234,6 +246,28 @@ static const SettingProviderSetting busy_timer_settings_v1_app_config[] = {
                 },
             .field_offset = offsetof(BusyAppConfig, is_show_work_time_enabled),
             .type = SettingProviderSettingTypeBool,
+        },
+    [BusyTimerSettingsV1AppConfigIdxWorkTimeShown] =
+        {
+            .name = "work_time_shown_ms",
+            .interface =
+                &(const SettingProviderIntInterface){
+                    .is_valid_callback = busy_timer_settings_v1_is_valid_work_time_ms,
+                    .default_value = BUSY_APP_WORK_TIME_SHOWN_MS_DEFAULT,
+                },
+            .field_offset = offsetof(BusyAppConfig, work_time_shown_ms),
+            .type = SettingProviderSettingTypeInt,
+        },
+    [BusyTimerSettingsV1AppConfigIdxWorkTimeHidden] =
+        {
+            .name = "work_time_hidden_ms",
+            .interface =
+                &(const SettingProviderIntInterface){
+                    .is_valid_callback = busy_timer_settings_v1_is_valid_work_time_ms,
+                    .default_value = BUSY_APP_WORK_TIME_HIDDEN_MS_DEFAULT,
+                },
+            .field_offset = offsetof(BusyAppConfig, work_time_hidden_ms),
+            .type = SettingProviderSettingTypeInt,
         },
 };
 

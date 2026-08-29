@@ -20,6 +20,8 @@
 #define KEY_COMMON_BUSY_BAR_SETTINGS_SHOW_WORK_PHASE_ONLY "show_work_phase_only"
 #define KEY_COMMON_BUSY_BAR_SETTINGS_TRIGGER_SMART_HOME   "trigger_smart_home"
 #define KEY_COMMON_BUSY_BAR_SETTINGS_SHOW_WORK_TIME       "show_work_time"
+#define KEY_COMMON_BUSY_BAR_SETTINGS_WORK_TIME_SHOWN      "work_time_shown_ms"
+#define KEY_COMMON_BUSY_BAR_SETTINGS_WORK_TIME_HIDDEN     "work_time_hidden_ms"
 
 // Serialization
 
@@ -50,6 +52,8 @@ bool busy_timer_common_deserialize_interval_config(
     BusyTimerIntervalConfig* interval_config);
 
 // Validation
+
+bool busy_timer_common_is_valid_work_time_ms(int value);
 
 bool busy_timer_common_is_valid_card_id(const char* card_id);
 

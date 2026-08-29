@@ -241,6 +241,8 @@ static bool
                 .is_smart_home_enabled = BUSY_APP_IS_SMART_HOME_ENABLED_DEFAULT,
                 .is_show_work_only_enabled = BUSY_APP_IS_SHOW_WORK_ONLY_ENABLED_DEFAULT,
                 .is_show_work_time_enabled = BUSY_APP_IS_SHOW_WORK_TIME_ENABLED_DEFAULT,
+                .work_time_shown_ms = BUSY_APP_WORK_TIME_SHOWN_MS_DEFAULT,
+                .work_time_hidden_ms = BUSY_APP_WORK_TIME_HIDDEN_MS_DEFAULT,
             };
         }
 

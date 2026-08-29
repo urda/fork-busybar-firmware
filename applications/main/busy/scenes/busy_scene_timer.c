@@ -11,9 +11,6 @@
 
 #define COUNTDOWN_THRESHOLD_S (3)
 
-#define TIMER_HIDDEN_TIME_MS (S_TO_MS(15))
-#define TIMER_SHOWN_TIME_MS  (S_TO_MS(5))
-
 #define TRANSITION_CLEAR_TIME_MS (100)
 
 typedef struct {
@@ -33,6 +30,7 @@ typedef struct {
     bool is_paused;
     bool is_force_ended;
     bool is_mode_transition;
+    bool is_label_peek_shown;
 } BusySceneTimer;
 
 static bool busy_scene_timer_input_callback(const InputEvent* event, void* context) {
@@ -154,7 +152,10 @@ static void busy_scene_timer_update_tick(BusyApp* instance) {
         if(busy_scene_timer_wants_forced_peek(instance, data) &&
            time_remain_s == COUNTDOWN_THRESHOLD_S) {
             timer_label_show(data->timer_label, true);
-            furi_event_loop_timer_start(data->show_label_timer, TIMER_SHOWN_TIME_MS);
+            data->is_label_peek_shown = true;
+            furi_event_loop_timer_start(
+                data->show_label_timer,
+                MAX(instance->config.work_time_shown_ms, (int)S_TO_MS(COUNTDOWN_THRESHOLD_S + 1)));
         }
     });
 
@@ -301,7 +302,9 @@ static void busy_scene_timer_update_timer_state(BusyApp* instance) {
             } else if(has_label_tweaks) {
                 if(!data->is_mode_transition) {
                     timer_label_hide(data->timer_label, false);
-                    furi_event_loop_timer_start(data->show_label_timer, TIMER_HIDDEN_TIME_MS);
+                    data->is_label_peek_shown = false;
+                    furi_event_loop_timer_start(
+                        data->show_label_timer, instance->config.work_time_hidden_ms);
                 }
 
             } else {
@@ -362,7 +365,9 @@ static void busy_scene_timer_handle_pause(BusyApp* instance) {
 
             if(busy_scene_timer_wants_forced_peek(instance, data)) {
                 timer_label_show(data->timer_label, true);
-                furi_event_loop_timer_start(data->show_label_timer, TIMER_SHOWN_TIME_MS);
+                data->is_label_peek_shown = true;
+                furi_event_loop_timer_start(
+                    data->show_label_timer, instance->config.work_time_shown_ms);
             }
 
         } else if(!is_label_allowed) {
@@ -370,7 +375,9 @@ static void busy_scene_timer_handle_pause(BusyApp* instance) {
             timer_label_hide(data->timer_label, true);
 
         } else if(busy_scene_timer_has_label_tweaks(data)) {
-            furi_event_loop_timer_start(data->show_label_timer, TIMER_HIDDEN_TIME_MS);
+            data->is_label_peek_shown = false;
+            furi_event_loop_timer_start(
+                data->show_label_timer, instance->config.work_time_hidden_ms);
             timer_label_hide(data->timer_label, true);
 
         } else {
@@ -394,13 +401,15 @@ static void busy_scene_timer_handle_skip(BusyApp* instance) {
 }
 
 static void busy_scene_timer_handle_increment_decrement(BusyApp* instance, int32_t value) {
-    const BusySceneTimer* data =
+    BusySceneTimer* data =
         scene_manager_get_scene_data(instance->scene_manager, BusyAppSceneIdTimer);
 
     if(busy_scene_timer_wants_forced_peek(instance, data)) {
         with_gui(instance->gui, {
             timer_label_show(data->timer_label, true);
-            furi_event_loop_timer_start(data->show_label_timer, TIMER_SHOWN_TIME_MS);
+            data->is_label_peek_shown = true;
+            furi_event_loop_timer_start(
+                data->show_label_timer, instance->config.work_time_shown_ms);
         });
     }
 
@@ -500,37 +509,35 @@ static void busy_scene_timer_show_label_timer_callback(void* context) {
     furi_assert(context);
     const BusyApp* instance = context;
 
-    const BusySceneTimer* data =
+    BusySceneTimer* data =
         scene_manager_get_scene_data(instance->scene_manager, BusyAppSceneIdTimer);
 
     FuriEventLoopTimer* label_timer = data->show_label_timer;
 
-    const uint32_t prev_interval_ms = furi_event_loop_timer_get_interval(label_timer);
     const bool is_loop_allowed = busy_scene_timer_is_label_allowed(instance, data) &&
                                  busy_scene_timer_has_label_tweaks(data);
     bool restart_timer = false;
     uint32_t interval_ms = 0;
 
     with_gui(instance->gui, {
-        if(prev_interval_ms == TIMER_HIDDEN_TIME_MS) {
-            if(is_loop_allowed) {
-                interval_ms = TIMER_SHOWN_TIME_MS;
-                timer_label_show(data->timer_label, true);
-                restart_timer = true;
-            } else {
-                timer_label_hide(data->timer_label, false);
-            }
-
-        } else if(prev_interval_ms == TIMER_SHOWN_TIME_MS) {
+        if(data->is_label_peek_shown) {
             timer_label_hide(data->timer_label, true);
+            data->is_label_peek_shown = false;
 
             if(is_loop_allowed) {
-                interval_ms = TIMER_HIDDEN_TIME_MS;
+                interval_ms = instance->config.work_time_hidden_ms;
                 restart_timer = true;
             }
 
         } else {
-            furi_crash("Illegal timer label interval");
+            if(is_loop_allowed) {
+                interval_ms = instance->config.work_time_shown_ms;
+                timer_label_show(data->timer_label, true);
+                data->is_label_peek_shown = true;
+                restart_timer = true;
+            } else {
+                timer_label_hide(data->timer_label, false);
+            }
         }
     });
 
@@ -581,6 +588,7 @@ static void busy_scene_timer_on_enter(void* context) {
 
     data->timer_mode = BusyTimerModeMax;
     data->prev_timer_mode = BusyTimerModeMax;
+    data->is_label_peek_shown = false;
 
     if(!instance->show_timer_requested) {
         busy_timer_start(instance->busy_timer, busy_get_profile_id(instance));

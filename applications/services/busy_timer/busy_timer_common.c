@@ -30,6 +30,14 @@ void busy_timer_common_serialize_app_config(cJSON* json, const BusyAppConfig* ap
         busy_bar_settings_json,
         KEY_COMMON_BUSY_BAR_SETTINGS_SHOW_WORK_TIME,
         app_config->is_show_work_time_enabled);
+    cJSON_AddNumberToObject(
+        busy_bar_settings_json,
+        KEY_COMMON_BUSY_BAR_SETTINGS_WORK_TIME_SHOWN,
+        app_config->work_time_shown_ms);
+    cJSON_AddNumberToObject(
+        busy_bar_settings_json,
+        KEY_COMMON_BUSY_BAR_SETTINGS_WORK_TIME_HIDDEN,
+        app_config->work_time_hidden_ms);
 }
 
 void busy_timer_common_serialize_infinite_config(cJSON* json) {
@@ -99,6 +107,28 @@ bool busy_timer_common_deserialize_app_config(const cJSON* json, BusyAppConfig* 
             break;
         } else {
             app_config->is_show_work_time_enabled = cJSON_IsTrue(item);
+        }
+
+        item = cJSON_GetObjectItem(json, KEY_COMMON_BUSY_BAR_SETTINGS_WORK_TIME_SHOWN);
+        if(!item) {
+            app_config->work_time_shown_ms = BUSY_APP_WORK_TIME_SHOWN_MS_DEFAULT;
+        } else if(
+            cJSON_IsNumber(item) &&
+            busy_timer_common_is_valid_work_time_ms(cJSON_GetNumberValue(item))) {
+            app_config->work_time_shown_ms = cJSON_GetNumberValue(item);
+        } else {
+            break;
+        }
+
+        item = cJSON_GetObjectItem(json, KEY_COMMON_BUSY_BAR_SETTINGS_WORK_TIME_HIDDEN);
+        if(!item) {
+            app_config->work_time_hidden_ms = BUSY_APP_WORK_TIME_HIDDEN_MS_DEFAULT;
+        } else if(
+            cJSON_IsNumber(item) &&
+            busy_timer_common_is_valid_work_time_ms(cJSON_GetNumberValue(item))) {
+            app_config->work_time_hidden_ms = cJSON_GetNumberValue(item);
+        } else {
+            break;
         }
 
         success = true;
@@ -207,6 +237,10 @@ bool busy_timer_common_deserialize_interval_config(
     } while(false);
 
     return success;
+}
+
+bool busy_timer_common_is_valid_work_time_ms(int value) {
+    return value >= BUSY_APP_WORK_TIME_MS_MIN && value <= BUSY_APP_WORK_TIME_MS_MAX;
 }
 
 bool busy_timer_common_is_valid_card_id(const char* card_id) {

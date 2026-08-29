@@ -11,6 +11,10 @@
 #define BUSY_APP_IS_SMART_HOME_ENABLED_DEFAULT     (true)
 #define BUSY_APP_IS_SHOW_WORK_ONLY_ENABLED_DEFAULT (false)
 #define BUSY_APP_IS_SHOW_WORK_TIME_ENABLED_DEFAULT (true)
+#define BUSY_APP_WORK_TIME_SHOWN_MS_DEFAULT        (5000)
+#define BUSY_APP_WORK_TIME_HIDDEN_MS_DEFAULT       (15000)
+#define BUSY_APP_WORK_TIME_MS_MIN                  (1000)
+#define BUSY_APP_WORK_TIME_MS_MAX                  (60000)
 
 /**
  * @brief Maximum length of a theme name.
@@ -32,4 +36,10 @@ typedef struct {
     /** Show the remaining time throughout work if @c true,
      *  limit it to countdown and adjustment feedback otherwise */
     bool is_show_work_time_enabled;
+    /** How long the remaining-time label stays visible during a work
+     *  interval with a custom theme, in milliseconds */
+    int work_time_shown_ms;
+    /** How long the remaining-time label stays hidden during a work
+     *  interval with a custom theme, in milliseconds */
+    int work_time_hidden_ms;
 } BusyAppConfig;
